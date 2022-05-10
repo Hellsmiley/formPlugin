@@ -97,22 +97,22 @@ function post_add(){
     if(!empty($data['name'])){
         $name = $data['name'];
     }else{
-        return returnJson(['error' => 1, 'code_error' => '1Помилка відправки, пусте поле name!']);
+        return returnJson(['error' => 1, 'code_error' => 'Помилка відправки, пусте поле name!']);
     }            
     if(!empty($data['email'])){
         $email = $data['email'];
     }else{
-        return returnJson(['error' => 1, 'code_error' => '2Помилка відправки, пусте поле email!']);
+        return returnJson(['error' => 1, 'code_error' => 'Помилка відправки, пусте поле email!']);
     }             
     if(!empty($data['phone'])){
         $phone = $data['phone'];
     } else{
-        return returnJson(['error' => 1, 'code_error' => '3Помилка відправки, пусте поле phone!']);
+        return returnJson(['error' => 1, 'code_error' => 'Помилка відправки, пусте поле phone!']);
     }            
     if(!empty($data['date'])){
         $date = $data['date'];
     }else{
-        return returnJson(['error' => 1, 'code_error' => '4Помилка відправки, пусте поле date!']);
+        return returnJson(['error' => 1, 'code_error' => 'Помилка відправки, пусте поле date!']);
     }             
    
    
@@ -123,9 +123,9 @@ function post_add(){
     // print_r($sql);
     $result_check = $wpdb->query($sql);
     if($result_check){
-        return returnJson(['error' => 0, 'code_error' => '0Данні успішно відправлені!']);
+        return returnJson(['error' => 0, 'code_error' => 'Данні успішно відправлені!']);
      }else{
-        return returnJson(['error' => 1, 'code_error' => '5Помилка відправки, проблеми з базою!']);
+        return returnJson(['error' => 1, 'code_error' => 'Помилка відправки, проблеми з базою!']);
      }
     die();
 }
