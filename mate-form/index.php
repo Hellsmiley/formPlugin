@@ -26,8 +26,8 @@ function load_plugin() {
            
            $sql = "CREATE TABLE " . $table_name . " (
            id mediumint(9) NOT NULL AUTO_INCREMENT,
-           date bigint(11) DEFAULT '0' NOT NULL,
-           name tinytext NOT NULL,
+           date DATE NOT NULL,
+           name varchar(45) NOT NULL,
            email varchar(255) NOT NULL,
            phone varchar(45) NOT NULL,
            UNIQUE KEY id (id)
@@ -35,36 +35,87 @@ function load_plugin() {
      
          require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
            dbDelta($sql);
-
         }
-
 }
 
 function form_init(){
-    form_data_table();
-    
+    form_data_table();   
 }
 
 function form_data_table(){
-    echo 'table';
+    global $wpdb;
+
+    $result = $wpdb->get_results ( "
+    SELECT * 
+    FROM  `wp_mate_form`
+" );
+?>
+<table> 
+<thead>
+	<tr>
+	 <th>ID</th>
+	 <th>name</th>
+     <th>email</th>
+	 <th>phone</th>
+	 <th>date</th>
+
+</thead>
+
+<tbody>
+    <tr>
+	 <?php foreach ($result as $item){ ?>
+	 <td> <?php echo $item->id; ?> </td>
+	 <td> <?php echo $item->name; ?> </td>
+	 <td> <?php echo $item->email; ?> </td>
+	 <td> <?php echo $item->phone; ?> </td>
+	 <td> <?php echo $item->date; ?> </td>
+      </tr>
+	<?php } ?>
+</tbody>
+</table>
+<?
 
 }
 
 function post_add(){
+
+    function returnJson($array = null)
+{
+    echo json_encode($array);
+    die();
+}
+
+
     global $wpdb;
-    $post_data = $_POST['data'];
-        $a = explode('&',$post_data);
-       foreach($a as $item){
-           $b = explode('=',$item);
-           $data[$b[0]] = $b[1];
-       }
+    // print_r($_POST);
+    foreach($_POST['data'] as $item){
+        $data[$item['name']] = html_entity_decode($item['value']);
+    }   
+
     global $wpdb;
 
-                
-    $name = $data['name'];
-    $email = $data['email']; 
-    $phone = $data['phone'];
-    $date = $data['date']; 
+    if(!empty($data['name'])){
+        $name = $data['name'];
+    }else{
+        return returnJson(['error' => 1, 'code_error' => '1Помилка відправки, пусте поле name!']);
+    }            
+    if(!empty($data['email'])){
+        $email = $data['email'];
+    }else{
+        return returnJson(['error' => 1, 'code_error' => '2Помилка відправки, пусте поле email!']);
+    }             
+    if(!empty($data['phone'])){
+        $phone = $data['phone'];
+    } else{
+        return returnJson(['error' => 1, 'code_error' => '3Помилка відправки, пусте поле phone!']);
+    }            
+    if(!empty($data['date'])){
+        $date = $data['date'];
+    }else{
+        return returnJson(['error' => 1, 'code_error' => '4Помилка відправки, пусте поле date!']);
+    }             
+   
+   
 
     $sql = "INSERT INTO `wp_mate_form`
     (`name`,`email`,`phone`,`date`) 
@@ -72,15 +123,14 @@ function post_add(){
     // print_r($sql);
     $result_check = $wpdb->query($sql);
     if($result_check){
-        echo 1;
+        return returnJson(['error' => 0, 'code_error' => '0Данні успішно відправлені!']);
      }else{
-       echo 0;
+        return returnJson(['error' => 1, 'code_error' => '5Помилка відправки, проблеми з базою!']);
      }
     die();
 }
 
 function form_conclusion() {
-   echo 'Hello';
    ?>
    <style>
     .form-group{
@@ -111,7 +161,7 @@ function form_conclusion() {
 .popup .popuptext {
   visibility: hidden;
   width: 160px;
-  background-color: #555;
+  background-color: #148331;
   color: #fff;
   text-align: center;
   border-radius: 6px;
@@ -123,6 +173,7 @@ function form_conclusion() {
   margin-left: -80px;
 }
 
+
 /* Popup arrow */
 
 
@@ -131,6 +182,10 @@ function form_conclusion() {
   visibility: visible;
   -webkit-animation: fadeIn 1s;
   animation: fadeIn 1s;
+}
+
+.popup .error {
+  background-color: #af0f0f;
 }
 
 /* Add animation (fade in the popup) */
@@ -148,6 +203,8 @@ function form_conclusion() {
   src="https://code.jquery.com/jquery-3.6.0.js"
   integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
   crossorigin="anonymous"></script>
+  <script type='text/javascript' src="https://rawgit.com/RobinHerbots/jquery.inputmask/3.x/dist/jquery.inputmask.bundle.js"></script>
+
 
 <div>
     <form class="form-group"  method="post" id="contactForm">
@@ -176,21 +233,31 @@ function form_conclusion() {
     </div>
 </div>
 <script type="text/javascript">
+   
+    $("#phone").inputmask({"mask": "(999) 999-9999"});
+    $("#date").inputmask({"mask": "9999-99-99"});
+
     var frm = $('#contactForm');
 
     frm.submit(function (e) {
 
         e.preventDefault();
-        var formData = frm.serialize();
+        var formData = frm.serializeArray();
         $.ajax({
-            type: frm.attr('method'),
+            method: 'POST',
+            type: 'POST',
             data: { 
                 action: 'mform',
                 data: formData,  
             },
             url: '/wp-admin/admin-ajax.php',
+            dataType: "html",
             success: function (data) {
-                if (data == "1") {
+                var d = JSON.parse(data);
+                console.log(d);
+                document.getElementById("myPopup").innerHTML = d.code_error;
+                
+                if (d.error == "0") {
                     var popup = document.getElementById("myPopup");
                     popup.classList.add("show");
                     // popup.classList.toggle("show");
@@ -200,7 +267,16 @@ function form_conclusion() {
                         popup.classList.remove("show");
                     }
                 } else {
-                    $('[id$=' + txtRate + ']').focus();
+                    var popup = document.getElementById("myPopup");
+                    popup.classList.add("error");
+                    popup.classList.add("show");
+                    // popup.classList.toggle("show");
+                    // $("#myPopup").fadeOut( "slow");
+                    setTimeout(popupHide, 3000);
+                    function popupHide() {
+                        popup.classList.remove("show");
+                        popup.classList.remove("error");
+                    }
                 }
             }
         });
@@ -211,4 +287,4 @@ function form_conclusion() {
  add_action('wp_ajax_nopriv_mform','post_add');
 add_action('wp_ajax_mform','post_add');
 
- add_shortcode( 'form_conclusion_shortcode', 'form_conclusion');
+add_shortcode( 'form_conclusion_shortcode', 'form_conclusion');
